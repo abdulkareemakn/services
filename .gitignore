@@ -1,0 +1,39 @@
+# Environment variables
+.env
+*.env
+!.env.example
+
+# Docker volumes and data
+**/volumes/
+**/data/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# SSH keys (security)
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Backup files
+*.bak
+*.backup
