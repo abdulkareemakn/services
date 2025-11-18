@@ -1,0 +1,19 @@
+services:
+  convertx:
+    image: ghcr.io/c4illin/convertx:v0.15.1
+    container_name: convertx
+    restart: unless-stopped
+    environment:
+      - JWT_SECRET=a11c89928bc36b50297c7d5a143ec0f93db2863e67751da2fa95b19a0161f04f
+      - HTTP_ALLOWED=false
+      - ALLOW_UNAUTHENTICATED=true
+      - ACCOUNT_REGISTRATION=false
+      - HIDE_HISTORY=true
+    volumes:
+      - /opt/convertx/data:/app/data
+    networks:
+      - caddy_net
+
+networks:
+  caddy_net:
+    external: true

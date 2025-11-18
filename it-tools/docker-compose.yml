@@ -1,0 +1,11 @@
+services:
+  it-tools:
+    image: ghcr.io/corentinth/it-tools:latest
+    container_name: it-tools
+    restart: unless-stopped
+    networks: 
+      - caddy_net
+
+networks:
+  caddy_net:
+    external: true

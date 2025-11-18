@@ -1,0 +1,15 @@
+services:
+  linkding:
+    container_name: linkding
+    image: sissbruecker/linkding:1.44.1-alpine
+    volumes:
+      - "/opt/containers/linkding/data:/etc/linkding/data"
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - caddy_net
+
+networks:
+  caddy_net:
+    external: true
