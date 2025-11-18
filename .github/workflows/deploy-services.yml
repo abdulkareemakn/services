@@ -12,6 +12,9 @@ jobs:
   detect-and-deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read  # Required to checkout code
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
