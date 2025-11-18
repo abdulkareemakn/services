@@ -1,0 +1,19 @@
+services:
+  memos:
+    image: neosmemo/memos:0.25.2
+    container_name: memos
+    restart: unless-stopped
+    volumes:
+      - /opt/memos/data:/var/opt/memos
+    networks:
+      - caddy_net
+    environment:
+      # MEMOS_ENABLE_MFA: true
+      # MEMOS_MFA_METHODS: totp
+      # MEMOS_MFA_REQUIRED_FOR_ADMINS: true
+      # MEMOS_MFA_GRACE_PERIOD: 86400
+      MEMOS_BLOCKED_EXTENSIONS: exe,bat,sh,js
+
+networks:
+  caddy_net:
+    external: true

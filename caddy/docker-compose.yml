@@ -1,0 +1,35 @@
+services:
+  caddy:
+    image: caddy:2.10
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - 0.0.0.0:80:80/tcp
+      - 0.0.0.0:443:443
+    volumes:
+      - /opt/containers/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - /opt/containers/caddy/data:/data
+      - /opt/containers/caddy/config:/config
+      - /opt/containers/caddy/logs:/logs
+    networks:
+      - caddy_net
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:v4.0.1
+    container_name: tinyauth
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3000:3000
+    environment: 
+      - APP_URL=https://tinyauth.abdulkareem.codes
+      - USERS=tmtaxman:$2a$12$6LFG8XWC833g20X71ZT7CugCoC26LvYLawwxFH2lTDsuXrcOFv6KK:DT7GFFYB44LSHHJ4H3L2RVRFNOR2CVKZ
+    networks:
+      - caddy_net
+
+
+networks:
+  caddy_net:
+    external: true
