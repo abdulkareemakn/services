@@ -11,31 +11,31 @@ on:
 jobs:
   detect-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 2  # Need at least 2 commits to compare changes
-      
+
       - name: Detect changed compose files
         id: changed-files
         run: |
           echo "Detecting changed Docker Compose files..."
-          
+
           # Get list of changed files between HEAD and HEAD~1
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E 'docker-compose.*\.ya?ml$' || true)
-          
+
           if [ -z "$CHANGED_FILES" ]; then
             echo "No Docker Compose files changed."
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "Changed Docker Compose files:"
             echo "$CHANGED_FILES"
-            
+
             # Extract unique service directories (parent directories of compose files)
             SERVICES=$(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u | tr '\n' ' ')
-            
+
             echo "has_changes=true" >> $GITHUB_OUTPUT
             echo "changed_files<<EOF" >> $GITHUB_OUTPUT
             echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
@@ -44,7 +44,7 @@ jobs:
             echo "$SERVICES" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Setup SSH
         if: steps.changed-files.outputs.has_changes == 'true'
         run: |
@@ -52,7 +52,7 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-      
+
       - name: Deploy to VPS
         if: steps.changed-files.outputs.has_changes == 'true'
         env:
@@ -61,35 +61,35 @@ jobs:
           VPS_DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/services' }}
         run: |
           echo "Deploying services to VPS..."
-          
+
           # Read the changed files and services
           CHANGED_FILES="${{ steps.changed-files.outputs.changed_files }}"
           SERVICES="${{ steps.changed-files.outputs.services }}"
-          
+
           # Copy changed compose files to VPS
           for file in $CHANGED_FILES; do
             echo "Copying $file to VPS..."
-            
+
             # Create directory structure on VPS if it doesn't exist
             DIR=$(dirname "$file")
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
               ${VPS_USER}@${VPS_HOST} \
               "mkdir -p ${VPS_DEPLOY_PATH}/${DIR}"
-            
+
             # Copy the compose file
             scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
               "$file" \
               ${VPS_USER}@${VPS_HOST}:${VPS_DEPLOY_PATH}/${file}
           done
-          
+
           # Deploy each affected service
           for service_dir in $SERVICES; do
             echo "Deploying service in directory: $service_dir"
-            
+
             # Find the compose file in the service directory
             COMPOSE_FILE=$(echo "$CHANGED_FILES" | grep "^${service_dir}/" | head -n 1)
             COMPOSE_FILENAME=$(basename "$COMPOSE_FILE")
-            
+
             # Execute deployment on VPS
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
               ${VPS_USER}@${VPS_HOST} \
@@ -105,9 +105,9 @@ jobs:
               docker image prune -f && \
               echo 'Service ${service_dir} deployed successfully!'"
           done
-          
+
           echo "All services deployed successfully!"
-      
+
       - name: Deployment Summary
         if: steps.changed-files.outputs.has_changes == 'true'
         run: |
@@ -122,7 +122,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.changed-files.outputs.services }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-      
+
       - name: No Changes Detected
         if: steps.changed-files.outputs.has_changes != 'true'
         run: |
