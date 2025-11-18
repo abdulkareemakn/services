@@ -90,27 +90,20 @@ jobs:
             COMPOSE_FILE=$(echo "$CHANGED_FILES" | grep "^${service_dir}/" | head -n 1)
             COMPOSE_FILENAME=$(basename "$COMPOSE_FILE")
             
-            # Create deployment script
-            cat > /tmp/deploy_${service_dir//\//_}.sh << 'SCRIPT_EOF'
-          set -e
-          cd ${VPS_DEPLOY_PATH}/${service_dir}
-          
-          echo "Pulling latest images for ${service_dir}..."
-          docker compose -f ${COMPOSE_FILENAME} pull
-          
-          echo "Deploying ${service_dir}..."
-          docker compose -f ${COMPOSE_FILENAME} up -d --remove-orphans
-          
-          echo "Cleaning up old images..."
-          docker image prune -f
-          
-          echo "Service ${service_dir} deployed successfully!"
-          SCRIPT_EOF
-            
             # Execute deployment on VPS
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
               ${VPS_USER}@${VPS_HOST} \
-              "VPS_DEPLOY_PATH=${VPS_DEPLOY_PATH} service_dir=${service_dir} COMPOSE_FILENAME=${COMPOSE_FILENAME} bash -s" < /tmp/deploy_${service_dir//\//_}.sh
+              "export VPS_DEPLOY_PATH=${VPS_DEPLOY_PATH} && \
+              export service_dir=${service_dir} && \
+              export COMPOSE_FILENAME=${COMPOSE_FILENAME} && \
+              cd \${VPS_DEPLOY_PATH}/\${service_dir} && \
+              echo 'Pulling latest images for ${service_dir}...' && \
+              docker compose -f \${COMPOSE_FILENAME} pull && \
+              echo 'Deploying ${service_dir}...' && \
+              docker compose -f \${COMPOSE_FILENAME} up -d --remove-orphans && \
+              echo 'Cleaning up old images...' && \
+              docker image prune -f && \
+              echo 'Service ${service_dir} deployed successfully!'"
           done
           
           echo "All services deployed successfully!"

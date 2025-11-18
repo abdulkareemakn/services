@@ -55,6 +55,10 @@ services/
 
 ## Setup
 
+### First-Time Setup
+
+**New to this repository?** Follow the [Quick Setup Guide (SETUP.md)](SETUP.md) for step-by-step instructions.
+
 ### Prerequisites
 
 - A VPS with Docker and Docker Compose installed
@@ -70,7 +74,7 @@ You need to configure the following GitHub repository secrets:
 - `VPS_USER` - SSH username for the VPS
 - `VPS_DEPLOY_PATH` - (Optional) Base deployment path on VPS (default: `/opt/services`)
 
-For detailed setup instructions, see [.github/workflows/README.md](.github/workflows/README.md)
+For detailed setup instructions, see [SETUP.md](SETUP.md) or [.github/workflows/README.md](.github/workflows/README.md)
 
 ## How It Works
 
@@ -91,7 +95,9 @@ For detailed setup instructions, see [.github/workflows/README.md](.github/workf
 
 ## Documentation
 
-- [Workflow Setup Guide](.github/workflows/README.md) - Detailed documentation for the deployment workflow
+- [Quick Setup Guide (SETUP.md)](SETUP.md) - Step-by-step setup instructions
+- [Workflow Documentation](.github/workflows/README.md) - Detailed workflow information
+- [Examples](examples/README.md) - Example service configurations
 - [Troubleshooting](.github/workflows/README.md#troubleshooting) - Common issues and solutions
 
 ## Security
