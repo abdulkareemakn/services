@@ -27,8 +27,8 @@ services:
     environment:
       LISTEN: /beszel_socket/beszel.sock
       HUB_URL: https://stats.abdulkareem.codes
-      TOKEN: acad2922-6d93-41c2-b319-a8acae7ac638
-      KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAIn+c054shAAuOJ3oH2wk4QFxEucTACjTHf/FlAJhhJ"
+    env_file: 
+      - .env
 
 networks:
   caddy_net:
