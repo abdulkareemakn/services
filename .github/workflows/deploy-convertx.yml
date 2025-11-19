@@ -1,0 +1,46 @@
+name: Deploy ConvertX
+
+on: 
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "convertx/**"
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Inject .env file
+        run: |
+          echo "${{ secrets.ENV_CONVERTX }}" > convertx/.env
+
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          source: "convertx"
+          target: "/home/deploy/services/"
+          rm: false
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            cd /home/deploy/services/convertx
+
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
