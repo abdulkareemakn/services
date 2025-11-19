@@ -1,0 +1,138 @@
+(tinyauth) {
+    forward_auth tinyauth:3000 {
+       uri /api/auth/caddy 
+       copy_headers Remote-User Remote-Name Remote-Email Remote-Groups
+    }
+}
+
+
+actual.abdulkareem.codes {
+    reverse_proxy actualbudget:5006
+
+    encode zstd gzip
+}
+
+bookmarks.abdulkareem.codes {
+    reverse_proxy linkding:9090
+
+    log {
+	format console
+        output file /logs/linkding.log {
+            roll_size     10mb
+            roll_keep     20
+            roll_keep_for 7d
+        }
+    }
+
+    encode zstd gzip
+}
+
+convert.abdulkareem.codes {
+    import tinyauth
+    reverse_proxy convertx:3000
+}
+
+ittools.abdulkareem.codes {
+    import tinyauth
+    reverse_proxy it-tools:80
+}
+
+logs.abdulkareem.codes {
+    import tinyauth
+    reverse_proxy dozzle:8080
+}
+
+memos.abdulkareem.codes {
+    reverse_proxy memos:5230
+
+    log {
+        format console
+        output file /logs/memos.log {
+            roll_size     10mb
+            roll_keep     20
+            roll_keep_for 7d
+        }
+    }
+
+    encode zstd gzip
+}
+
+solar.abdulkareem.codes {
+    reverse_proxy homeassistant:8123 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Port {server_port}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    log {
+        format console
+        output file /logs/homeassistant.log {
+            roll_size     10mb
+            roll_keep     20
+            roll_keep_for 7d
+        }
+    }
+
+    encode zstd gzip
+}
+
+tinyauth.abdulkareem.codes {
+    @allowed {
+        remote_ip 139.135.38.238
+    }
+    handle @allowed {
+        reverse_proxy tinyauth:3000
+    }
+    handle {
+        respond "Access Denied" 403
+    }
+}
+
+
+opengist.abdulkareem.codes {
+    reverse_proxy opengist:6157
+
+    log {
+        format console
+        output file /logs/opengist.log {
+            roll_size     10mb
+            roll_keep     20
+            roll_keep_for 7d
+        }
+    }
+
+    encode zstd gzip
+}
+
+stats.abdulkareem.codes {
+    import tinyauth
+    reverse_proxy beszel:8090
+
+    log {
+        format console
+        output file /logs/beszel.log {
+            roll_size     10mb
+            roll_keep     20
+            roll_keep_for 7d
+        }
+    }
+
+    encode zstd gzip
+}
+
+status.abdulkareem.codes {
+    reverse_proxy uptime-kuma:3001
+
+    log {
+    	format console
+	output file /logs/uptime_kuma.log {
+	    roll_size     10mb
+	    roll_keep     20
+	    roll_keep_for 7d
+	}
+    }
+
+    encode zstd gzip
+}

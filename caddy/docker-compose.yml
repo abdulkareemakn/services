@@ -7,7 +7,7 @@ services:
       - 0.0.0.0:80:80/tcp
       - 0.0.0.0:443:443
     volumes:
-      - /opt/containers/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - /opt/containers/caddy/data:/data
       - /opt/containers/caddy/config:/config
       - /opt/containers/caddy/logs:/logs
@@ -25,7 +25,8 @@ services:
       - 127.0.0.1:3000:3000
     environment: 
       - APP_URL=https://tinyauth.abdulkareem.codes
-      - USERS=tmtaxman:$2a$12$6LFG8XWC833g20X71ZT7CugCoC26LvYLawwxFH2lTDsuXrcOFv6KK:DT7GFFYB44LSHHJ4H3L2RVRFNOR2CVKZ
+    env_file:
+      - .env
     networks:
       - caddy_net
 
