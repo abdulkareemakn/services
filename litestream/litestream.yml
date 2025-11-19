@@ -1,0 +1,32 @@
+dbs:
+  - path: /opt/memos/data/memos_prod.db
+    monitor-interval: 1s
+    checkpoint-interval: 1m
+
+    replica:
+      type: s3
+      bucket: vps-backups
+      path: backups/containers/memos/db
+      endpoint: https://4528ff72f6e1b5972adb8fe47b855d8f.r2.cloudflarestorage.com
+      force-path-style: true
+      region: auto
+      sync-interval: 1m
+      retention: 168h
+      snapshot-interval: 24h
+      validation-interval: 720h
+
+  - path: /opt/opengist/data/opengist.db
+    monitor-interval: 1s
+    checkpoint-interval: 1m
+
+    replica:
+      type: s3
+      bucket: vps-backups
+      path: backups/containers/opengist/db
+      endpoint: https://4528ff72f6e1b5972adb8fe47b855d8f.r2.cloudflarestorage.com
+      force-path-style: true
+      region: auto
+      sync-interval: 1m
+      retention: 168h
+      snapshot-interval: 24h
+      validation-interval: 720h
