@@ -16,6 +16,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v5
 
+      - name: Inject .env file
+        run: |
+          echo "${{ secrets.ENV_OPENGIST }}" > opengist/.env
+
       - name: Copy files to VPS
         uses: appleboy/scp-action@v1
         with:

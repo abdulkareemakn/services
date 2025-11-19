@@ -1,0 +1,17 @@
+services:
+  opengist:
+    image: ghcr.io/thomiceli/opengist:1.11.1
+    container_name: opengist
+    restart: unless-stopped
+    # ports:
+    #   - 2222:2222
+    volumes:
+      - "/opt/opengist/data:/opengist"
+    networks:
+      - caddy_net
+    env_file:
+      - .env
+
+networks:
+  caddy_net:
+    external: true
