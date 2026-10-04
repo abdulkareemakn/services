@@ -32,8 +32,7 @@ cd ~/services
 cp apps/memos/.env.example apps/memos/.env     # per service, as needed
 $EDITOR apps/memos/.env
 
-make trust      # install the Caddy internal CA (once per device)
-make hosts      # ensure *.localhost resolves
+sudo make trust # install the Caddy internal CA (once per device)
 make up         # start everything
 make ps         # see what came up
 ```

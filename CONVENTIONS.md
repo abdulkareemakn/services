@@ -201,16 +201,20 @@ key fails loudly at `docker compose config` time rather than mysteriously later.
 ## Hostnames and TLS
 
 Every service is reachable at `https://<service>.localhost`, using Caddy's
-internal CA. Two things are needed once per device:
+internal CA. One thing is needed once per device:
 
 ```bash
-make trust    # install the Caddy root CA
-make hosts    # ensure *.localhost resolves
+sudo make trust   # install the Caddy root CA
 ```
 
-`.localhost` subdomains resolve natively in Chrome, Firefox and Edge. Safari and
-some older macOS configurations need the `/etc/hosts` entry, which `make hosts`
-writes.
+`.localhost` subdomains resolve to `127.0.0.1` natively per RFC 6761, so no
+`/etc/hosts` entry is required on Linux, macOS or Windows with current Chrome,
+Firefox or Edge.
+
+If you need `*.localhost` to work in Safari or an older macOS, add the hostnames
+to `/etc/hosts` yourself — there is no target for it here, deliberately. A
+generated list would be wrong the moment a service is added or renamed, and the
+entry is a one-off for the rare platform that needs it.
 
 Apps that build absolute URLs — OAuth callbacks, CSRF origin checks, DAV
 discovery — must be told their real hostname. Look for `*_URL`, `*_ENDPOINT`

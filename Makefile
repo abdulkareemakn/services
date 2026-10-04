@@ -89,17 +89,8 @@ logs: ## Follow logs (or SERVICE=name)
 # ─── Ingress ─────────────────────────────────────────────────────────────────
 
 .PHONY: trust
-trust: ## Trust the Caddy internal CA (required once per device)
-	@mkdir -p /opt/caddy/data
-	@echo "  Run: docker compose -f infra/caddy/compose.yaml up -d"
-	@echo "  Then: docker cp caddy:/data/caddy/pki/authorities/local/root.crt ./root.crt"
-	@echo "  Then: sudo cp root.crt /usr/local/share/ca-certificates/caddy-local.crt && sudo update-ca-certificates"
-
-.PHONY: hosts
-hosts: ## Write *.localhost entries into /etc/hosts
-	@grep -qE '^127\.0\.0\.1[[:space:]].*\.localhost' /etc/hosts \
-		|| echo "127.0.0.1 memos.localhost kaneo.localhost sure.localhost" | sudo tee -a /etc/hosts
-	@echo "  /etc/hosts updated"
+trust: ## Trust the Caddy internal CA (required once per device, needs sudo)
+	@./scripts/trust-ca.sh
 
 .PHONY: reload-caddy
 reload-caddy: ## Reload the Caddy config and report any errors
