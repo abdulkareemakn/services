@@ -1,0 +1,25 @@
+name: dozzle
+
+services:
+  dozzle:
+    image: ghcr.io/amir20/dozzle:v8.14.7
+    container_name: dozzle
+    restart: unless-stopped
+    # Reachable only through Caddy at logs.localhost
+    expose:
+      - "8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+    environment:
+      # Container actions stay off. Dozzle can read every container's logs
+      # including their environment, so this is the one service worth keeping
+      # locked down even on a loopback-only network.
+      DOZZLE_ENABLE_ACTIONS: "false"
+      DOZZLE_ENABLE_SHELL: "false"
+
+networks:
+  proxy:
+    external: true
+    name: proxy

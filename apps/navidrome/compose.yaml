@@ -1,0 +1,27 @@
+name: navidrome
+
+services:
+  navidrome:
+    image: deluan/navidrome:stable
+    container_name: navidrome
+    restart: unless-stopped
+    # Reachable only through Caddy at navidrome.localhost
+    expose:
+      - "4533"
+    user: 1001:1001
+    volumes:
+      - /opt/navidrome/app:/data
+      # No music library is configured. The previous VPS-era path
+      # /mnt/volume_sgp1_01/music does not exist on this machine and there is no
+      # replacement mount point yet. Point this at a local library before
+      # expecting Navidrome to play anything.
+      # - /opt/navidrome/music:/music:ro
+    networks:
+      - proxy
+    environment:
+      ND_LOGLEVEL: info
+
+networks:
+  proxy:
+    external: true
+    name: proxy

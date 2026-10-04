@@ -1,0 +1,30 @@
+name: memos
+
+services:
+  memos:
+    image: neosmemo/memos:0.25.2
+    container_name: memos
+    restart: unless-stopped
+    # Reachable only through Caddy at memos.localhost
+    expose:
+      - "5230"
+    volumes:
+      - /opt/memos/app:/var/opt/memos
+    networks:
+      - proxy
+    environment:
+      MEMOS_PORT: "5230"
+      MEMOS_DRIVER: sqlite
+      MEMOS_BLOCKED_EXTENSIONS: exe,bat,sh,js
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5230/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 30s
+
+networks:
+  proxy:
+    external: true
+    name: proxy

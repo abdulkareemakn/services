@@ -1,0 +1,25 @@
+name: opengist
+
+services:
+  opengist:
+    image: ghcr.io/thomiceli/opengist:1.11.1
+    container_name: opengist
+    restart: unless-stopped
+    # Reachable only through Caddy at opengist.localhost
+    expose:
+      - "6157"
+    volumes:
+      - /opt/opengist/app:/opengist
+      # Git-over-SSH is not HTTP, so Caddy cannot front it. Uncomment to
+      # publish the SSH port directly on the host.
+      # ports:
+      #   - "2222:2222"
+    env_file:
+      - .env
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy

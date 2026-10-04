@@ -1,108 +1,106 @@
-# Services Monorepo
+# homelab
 
-This repository contains Docker Compose configurations for various services, with automated deployment to a VPS.
+Every self-hosted service I run, as compose files. One repository, one ingress,
+no port juggling.
 
-## Overview
+This is the single source of truth. It replaced three separate directories that
+had drifted apart: a large catalogue of compose files, a CI-driven VPS
+deployment repo, and a small scratch directory of things actually running.
 
-This is a monorepo that manages multiple services using Docker Compose. When changes are pushed to the `main` branch, a GitHub Actions workflow automatically detects which services have been modified and redeploys them to a VPS via SSH.
+## How it works
 
-## Quick Start
+One service publishes ports to this host: **Caddy**, on 80 and 443. Everything
+else declares `expose:` and is reachable only through it, at
+`https://<service>.localhost`.
 
-### 1. Add a New Service
+```
+browser ──https──> caddy  ──proxy network──>  memos:5230
+                            ───────────────>  kaneo-app:5173
+                            ───────────────>  sure-app:3000
+```
 
-Create a new directory for your service with a Docker Compose file:
+Because Caddy resolves backends by `container_name` and nothing else binds a
+host port, port conflicts are structurally impossible. Adding a service cannot
+break an unrelated one.
+
+## Getting set up on a new device
 
 ```bash
-mkdir my-service
-cd my-service
+git clone git@github.com:abdulkareemakn/services.git ~/services
+cd ~/services
+
+cp apps/memos/.env.example apps/memos/.env     # per service, as needed
+$EDITOR apps/memos/.env
+
+make trust      # install the Caddy internal CA (once per device)
+make hosts      # ensure *.localhost resolves
+make up         # start everything
+make ps         # see what came up
 ```
 
-Create a `docker-compose.yml` file:
+`make trust` prints the exact commands — it needs `sudo`, so it cannot run
+unattended.
 
-```yaml
-version: '3.8'
-services:
-  app:
-    image: your-image:latest
-    ports:
-      - "8080:80"
-    restart: unless-stopped
+## Layout
+
+```
+infra/caddy/       the ingress; its Caddyfile is the routing table
+infra/beszel/      host metrics
+infra/dozzle/      container log viewer
+infra/diun/        image update notifications
+infra/litestream/  continuous SQLite replication to R2
+
+apps/<service>/    one directory per service: compose.yaml + .env.example
 ```
 
-### 2. Commit and Push
+See [CONVENTIONS.md](CONVENTIONS.md) for the rules every service follows.
+
+## Everyday commands
 
 ```bash
-git add my-service/
-git commit -m "Add my-service"
-git push origin main
+make help                        # all targets
+make ps                          # status of everything
+make health                      # only unhealthy/restarting containers
+make up SERVICE=memos            # start one
+make down SERVICE=memos          # stop one
+make logs SERVICE=memos          # tail one
+make validate                    # config-check every file, no side effects
+make diskspace                   # what is using /opt
+make prune                       # reclaim disk
 ```
 
-The GitHub Actions workflow will automatically deploy your service to the VPS!
+Each service is an independent compose project, so `make up` starts them
+independently — one failure does not stop the rest.
 
-## Repository Structure
+## Secrets
 
-```
-services/
-├── service1/
-│   └── docker-compose.yml
-├── service2/
-│   └── docker-compose.yml
-└── .github/
-    └── workflows/
-        ├── deploy-services.yml    # Deployment workflow
-        └── README.md              # Workflow documentation
+`.env` files are gitignored and never committed. Each service that needs
+configuration ships a `.env.example` documenting every key.
+
+Local-only secrets are generated per device:
+
+```bash
+openssl rand -hex 32
 ```
 
-## Setup
+Third-party credentials (API keys, object storage) go in `.env` by hand.
 
-### First-Time Setup
+## Adding a service
 
-**New to this repository?** Follow the [Quick Setup Guide (SETUP.md)](SETUP.md) for step-by-step instructions.
+1. `mkdir apps/<service>`, write `compose.yaml`, add `.env.example` if needed.
+2. Add a route to `infra/caddy/Caddyfile`.
+3. `make validate`.
+4. Commit, then `make up SERVICE=<service>`.
 
-### Prerequisites
+Full checklist in [CONVENTIONS.md](CONVENTIONS.md#adding-a-service).
 
-- A VPS with Docker and Docker Compose installed
-- SSH access to the VPS
-- GitHub repository with Actions enabled
+## Maintenance
 
-### Configuration
+`diun` watches for image updates and `litestream` replicates every SQLite
+database to Cloudflare R2. Neither is a substitute for an actual restore test —
+check that a replica can be turned back into a working database at least
+occasionally.
 
-You need to configure the following GitHub repository secrets:
-
-- `SSH_PRIVATE_KEY` - Private SSH key for VPS access
-- `VPS_HOST` - IP address or hostname of your VPS
-- `VPS_USER` - SSH username for the VPS
-- `VPS_DEPLOY_PATH` - (Optional) Base deployment path on VPS (default: `/opt/services`)
-
-For detailed setup instructions, see [SETUP.md](SETUP.md) or [.github/workflows/README.md](.github/workflows/README.md)
-
-## How It Works
-
-1. You push changes to Docker Compose files on the `main` branch
-2. GitHub Actions detects which compose files changed
-3. Changed files are copied to the VPS
-4. Services are redeployed using `docker compose up -d`
-5. Old images are cleaned up
-
-## Features
-
-- ✅ Automatic detection of changed compose files
-- ✅ Selective deployment of only modified services
-- ✅ SSH-based secure deployment
-- ✅ Support for multiple services in a single push
-- ✅ Deployment summary in workflow output
-- ✅ Automatic image cleanup
-
-## Documentation
-
-- [Quick Setup Guide (SETUP.md)](SETUP.md) - Step-by-step setup instructions
-- [Workflow Documentation](.github/workflows/README.md) - Detailed workflow information
-- [Examples](examples/README.md) - Example service configurations
-- [Troubleshooting](.github/workflows/README.md#troubleshooting) - Common issues and solutions
-
-## Security
-
-- SSH keys are stored as GitHub secrets
-- Only the `main` branch triggers deployments
-- Each service runs in isolation using Docker
-- See [Security Best Practices](.github/workflows/README.md#security-best-practices) for more information
+Image updates are deliberately not automatic. A floating tag plus an unattended
+restart can mean a breaking change with no commit to point at. Upgrade
+deliberately: `make pull`, then `make up SERVICE=<name>`, then check the logs.

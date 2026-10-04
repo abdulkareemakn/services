@@ -1,39 +1,37 @@
-# Environment variables
+# Secrets — never commit these
 .env
-*.env
+.env.*
 !.env.example
 
-# Docker volumes and data
-**/volumes/
-**/data/
+# Application state and databases. State belongs under /opt/<service>/,
+# never inside the repository.
+/data/
+/db/
+/database/
+/postgres/
+/redis/
+/meili/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+root.crt
 
 # Logs
 *.log
 logs/
 
-# OS files
+# Editor / OS
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 *~
-
-# IDE files
 .vscode/
 .idea/
-*.iml
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# SSH keys (security)
-*.pem
-*.key
-id_rsa
-id_ed25519
-
-# Backup files
-*.bak
-*.backup

@@ -1,0 +1,47 @@
+name: yamtrack
+
+services:
+  yamtrack-app:
+    image: ghcr.io/fuzzygrim/yamtrack:latest
+    container_name: yamtrack-app
+    restart: unless-stopped
+    # Reachable only through Caddy at yamtrack.localhost
+    expose:
+      - "8000"
+    env_file:
+      - .env
+    volumes:
+      - /opt/yamtrack/db:/yamtrack/db
+    networks:
+      - proxy
+    depends_on:
+      yamtrack-redis:
+        # Gating on the healthcheck closes a startup race where the app
+        # tried to reach Redis before it was accepting connections.
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-Asia/Karachi}
+      SECRET: ${SECRET:?set SECRET in .env}
+      REDIS_URL: redis://yamtrack-redis:6379
+
+  yamtrack-redis:
+    image: redis:8-alpine
+    container_name: yamtrack-redis
+    restart: unless-stopped
+    # Internal only — never published to the host.
+    expose:
+      - "6379"
+    volumes:
+      - /opt/yamtrack/redis:/data
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  proxy:
+    external: true
+    name: proxy

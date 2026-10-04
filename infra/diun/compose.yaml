@@ -1,0 +1,34 @@
+name: diun
+
+services:
+  diun:
+    image: crazymax/diun:4.30.0
+    container_name: diun
+    restart: unless-stopped
+    command: serve
+    # Reachable only through Caddy at diun.localhost
+    expose:
+      - "8080"
+    volumes:
+      - /opt/diun/app:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+    # All configuration is inline above; no .env needed. Add one here if you
+    # start wiring up Diun webhooks.
+    environment:
+      TZ: ${TZ:-Asia/Karachi}
+      DIUN_WATCH_WORKERS: "20"
+      DIUN_WATCH_SCHEDULE: "0 */6 * * *"
+      DIUN_WATCH_JITTER: 30s
+      DIUN_PROVIDERS_DOCKER: "true"
+      LOG_LEVEL: info
+      LOG_JSON: "false"
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
+    labels:
+      - "diun.enable=true"
+
+networks:
+  proxy:
+    external: true
+    name: proxy

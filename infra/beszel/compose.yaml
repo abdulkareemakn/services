@@ -1,0 +1,46 @@
+name: beszel
+
+services:
+  beszel:
+    image: henrygd/beszel:0.16.0
+    container_name: beszel
+    restart: unless-stopped
+    # Reachable only through Caddy at stats.localhost
+    expose:
+      - "8090"
+    volumes:
+      - /opt/beszel/app:/beszel_data
+      - /opt/beszel/socket:/beszel_socket
+    networks:
+      - proxy
+    env_file:
+      - .env
+    environment:
+      # Left enabled deliberately. The hub exposes host-level metrics, and
+      # every other container on the proxy network can reach it.
+      DISABLE_PASSWORD_AUTH: ${DISABLE_PASSWORD_AUTH:-false}
+      USER_CREATION: "true"
+      APP_URL: https://stats.localhost
+
+  beszel-agent:
+    image: henrygd/beszel-agent:0.16.0-alpine
+    container_name: beszel-agent
+    restart: unless-stopped
+    # Host network is required: the agent monitors host-level metrics and
+    # cannot sit on the proxy bridge.
+    network_mode: host
+    volumes:
+      - /opt/beszel/agent/data:/var/lib/beszel-agent
+      - /opt/beszel/socket:/beszel_socket
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # No `networks:` key — it cannot be combined with network_mode: host.
+    environment:
+      LISTEN: /beszel_socket/beszel.sock
+      HUB_URL: https://stats.localhost
+    env_file:
+      - .env
+
+networks:
+  proxy:
+    external: true
+    name: proxy

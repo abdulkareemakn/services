@@ -1,0 +1,32 @@
+name: litestream
+
+# Continuous SQLite replication to Cloudflare R2 for the services listed in
+# litestream.yml. This is the only thing standing between a mistake and losing
+# local data, so it is worth checking that replicas are actually landing.
+#
+# SQLite replication requires write access to the database directory so that
+# -wal and -shm sidecar files can be created. Do not mark these mounts :ro.
+
+services:
+  litestream:
+    image: litestream/litestream:0.5.2
+    container_name: litestream
+    restart: unless-stopped
+    command: replicate
+    # Reachable only through Caddy at litestream.localhost
+    expose:
+      - "8080"
+    volumes:
+      - ./litestream.yml:/etc/litestream.yml:ro
+      - /opt/litestream/app:/data
+      - /opt/memos/app:/opt/memos/app
+      - /opt/opengist/app:/opt/opengist/app
+    env_file:
+      - .env
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy

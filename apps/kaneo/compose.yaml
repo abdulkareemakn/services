@@ -1,0 +1,54 @@
+name: kaneo
+
+services:
+  kaneo-app:
+    image: ghcr.io/usekaneo/kaneo:2.28.3
+    container_name: kaneo-app
+    restart: unless-stopped
+    # Reachable only through Caddy at kaneo.localhost
+    expose:
+      - "5173"
+    env_file:
+      - .env
+    depends_on:
+      kaneo-db:
+        condition: service_healthy
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "-Y", "off", "--quiet", "--spider", "http://127.0.0.1:5173/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+  kaneo-db:
+    image: postgres:16-alpine
+    container_name: kaneo-db
+    restart: unless-stopped
+    # Internal only — never published to the host.
+    expose:
+      - "5432"
+    env_file:
+      - .env
+    volumes:
+      - /opt/kaneo/db:/var/lib/postgresql/data
+    networks:
+      proxy:
+        # Kaneo resolves its database as the hostname "postgres" and exposes no
+        # variable to override it. These aliases keep that working after the
+        # container was renamed to the kaneo-db convention.
+        aliases:
+          - postgres
+          - db
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    stop_grace_period: 30s
+
+networks:
+  proxy:
+    external: true
+    name: proxy

@@ -1,0 +1,43 @@
+name: vince
+
+# Vince — https://github.com/vinceanalytics/vince
+# Self-hosted alternative to Google Analytics. Single Go binary, no runtime
+# dependencies. Started as a Go port of Plausible Analytics.
+#
+# Requires bootstrap flags on first run, supplied via .env:
+#   VINCE_ADMIN_NAME      username for the first admin account
+#   VINCE_ADMIN_PASSWORD  password for the first admin account
+#   VINCE_DOMAINS         comma-separated sites this instance tracks
+#
+# After it starts, embed the tracking snippet it serves on the site(s) named in
+# VINCE_DOMAINS. With the internal Caddy ingress, track localhost-hosted sites
+# by adding an entry to infra/caddy/Caddyfile and setting VINCE_DOMAINS to match.
+
+services:
+  vince:
+    image: ghcr.io/vinceanalytics/vince:latest
+    container_name: vince
+    restart: unless-stopped
+    command:
+      - serve
+      - --adminName
+      - ${VINCE_ADMIN_NAME:?set VINCE_ADMIN_NAME in .env}
+      - --adminPassword
+      - ${VINCE_ADMIN_PASSWORD:?set VINCE_ADMIN_PASSWORD in .env}
+      - --domains
+      - ${VINCE_DOMAINS:?set VINCE_DOMAINS in .env}
+    # Reachable only through Caddy at vince.localhost
+    expose:
+      - "8080"
+    volumes:
+      - /opt/vince/app:/vince-data
+    networks:
+      - proxy
+    # No healthcheck: the image is a minimal Go build and no HTTP client has been
+    # confirmed present in it. Verified working before adding one rather than
+    # shipping a command that fails and marks the container unhealthy.
+
+networks:
+  proxy:
+    external: true
+    name: proxy

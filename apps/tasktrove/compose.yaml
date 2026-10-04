@@ -1,0 +1,25 @@
+name: tasktrove
+
+services:
+  tasktrove:
+    image: ghcr.io/dohsimpson/tasktrove:latest
+    container_name: tasktrove
+    restart: unless-stopped
+    # Reachable only through Caddy at tasktrove.localhost
+    expose:
+      - "3000"
+    volumes:
+      - /opt/tasktrove/app:/app/data
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  proxy:
+    external: true
+    name: proxy

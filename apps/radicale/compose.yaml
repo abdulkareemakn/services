@@ -1,0 +1,20 @@
+name: radicale
+
+services:
+  radicale:
+    image: ghcr.io/kozea/radicale:3.7.8
+    container_name: radicale
+    restart: unless-stopped
+    # Reachable only through Caddy at dav.localhost
+    expose:
+      - "5232"
+    volumes:
+      - /opt/radicale/config:/etc/radicale
+      - /opt/radicale/app:/var/lib/radicale
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy

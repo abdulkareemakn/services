@@ -1,0 +1,42 @@
+# Litestream replicates the SQLite databases of other services in this repo to
+# Cloudflare R2. Paths here must match the volumes in the owning service's
+# compose file — /opt/<service>/app is the standard location for primary state.
+#
+# Credentials live in .env alongside this file (AWS_ACCESS_KEY_ID,
+# AWS_SECRET_ACCESS_KEY). They are not committed.
+#
+# After changing a database path, recreate the container:
+#   docker compose -f infra/litestream/compose.yaml up -d
+
+dbs:
+  - path: /opt/memos/app/memos_prod.db
+    monitor-interval: 1s
+    checkpoint-interval: 1m
+
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_BUCKET}
+      path: backups/containers/memos/db
+      endpoint: ${LITESTREAM_ENDPOINT}
+      force-path-style: true
+      region: auto
+      sync-interval: 1m
+      retention: 168h
+      snapshot-interval: 24h
+      validation-interval: 720h
+
+  - path: /opt/opengist/app/opengist.db
+    monitor-interval: 1s
+    checkpoint-interval: 1m
+
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_BUCKET}
+      path: backups/containers/opengist/db
+      endpoint: ${LITESTREAM_ENDPOINT}
+      force-path-style: true
+      region: auto
+      sync-interval: 1m
+      retention: 168h
+      snapshot-interval: 24h
+      validation-interval: 720h

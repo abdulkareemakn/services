@@ -1,0 +1,37 @@
+# Local homelab ingress.
+#
+# This is the ONLY service in the repository that publishes ports to the host.
+# Everything else uses `expose:` and is reachable only through Caddy, which
+# routes on hostname and resolves backends by container_name.
+#
+# Requires the shared network to exist once:  docker network create proxy
+name: caddy
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/caddy/config:/config
+      - /opt/caddy/data:/data
+    networks:
+      - proxy
+    healthcheck:
+      # The admin API is always local and is the cheapest proof that Caddy
+      # has parsed its config and is serving.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    stop_grace_period: 30s
+
+networks:
+  proxy:
+    external: true
+    name: proxy

@@ -1,0 +1,17 @@
+name: it-tools
+
+services:
+  it-tools:
+    image: ghcr.io/corentinth/it-tools:stable
+    container_name: it-tools
+    restart: unless-stopped
+    # Reachable only through Caddy at ittools.localhost
+    expose:
+      - "80"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy

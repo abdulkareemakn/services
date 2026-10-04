@@ -1,0 +1,140 @@
+# Local homelab ingress.
+#
+# This file is the single source of truth for how services are reached.
+# Backends resolve by container_name over the shared `proxy` network, so no
+# application publishes a host port and port conflicts cannot happen.
+#
+# TLS uses Caddy's internal CA. Trust it once per device with `make trust`,
+# then every *.localhost URL below is a valid browser URL.
+{
+	admin localhost:2019
+	local_certs
+
+	servers {
+		trusted_proxies static private_ranges
+	}
+
+	log {
+		output file /data/logs/access.log {
+			roll_size 20mb
+			roll_keep 10
+			roll_keep_for 168h
+		}
+	}
+}
+
+# Applied to every application below.
+(common) {
+	import security
+	reverse_proxy {args[0]}
+}
+
+(security) {
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer-when-downgrade"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+	}
+	encode zstd gzip
+}
+
+# ─── Applications ────────────────────────────────────────────────────────────
+
+actual.localhost {
+	import common actualbudget:5006
+}
+
+booklogr.localhost {
+	import common booklogr-web:80
+}
+
+booklogr-api.localhost {
+	import common booklogr-api:5000
+}
+
+convert.localhost {
+	import common convertx:3000
+}
+
+ittools.localhost {
+	import common it-tools:80
+}
+
+jelu.localhost {
+	import common jelu:11111
+}
+
+kaneo.localhost {
+	import common kaneo-app:5173
+}
+
+bookmarks.localhost {
+	import common linkding:9090
+}
+
+memos.localhost {
+	import common memos:5230
+}
+
+navidrome.localhost {
+	import common navidrome:4533
+}
+
+opengist.localhost {
+	import common opengist:6157
+}
+
+dav.localhost {
+	import common radicale:5232
+}
+
+sure.localhost {
+	import common sure-app:3000
+}
+
+tasktrove.localhost {
+	import common tasktrove:3000
+}
+
+tracktor.localhost {
+	import common tracktor:3000
+}
+
+vince.localhost {
+	import common vince:8080
+}
+
+yamtrack.localhost {
+	import common yamtrack-app:8000
+}
+
+# ─── Infrastructure ──────────────────────────────────────────────────────────
+
+stats.localhost {
+	import common beszel:8090
+}
+
+logs.localhost {
+	import common dozzle:8080
+}
+
+diun.localhost {
+	import common diun:8080
+}
+
+litestream.localhost {
+	import common litestream:8080
+}
+
+# ─── Catch-all ───────────────────────────────────────────────────────────────
+# Unknown *.localhost names get a useful answer instead of a TLS error.
+
+:80 {
+	redir https://{host}{uri} permanent
+}
+
+*.localhost:443 {
+	respond "No route for {host}. Add a block to infra/caddy/Caddyfile." 404
+}

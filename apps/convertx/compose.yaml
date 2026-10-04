@@ -1,0 +1,26 @@
+name: convertx
+
+services:
+  convertx:
+    image: ghcr.io/c4illin/convertx:v0.15.1
+    container_name: convertx
+    restart: unless-stopped
+    # Reachable only through Caddy at convert.localhost
+    expose:
+      - "3000"
+    env_file:
+      - .env
+    volumes:
+      - /opt/convertx/app:/app/data
+    networks:
+      - proxy
+    environment:
+      HTTP_ALLOWED: "false"
+      ALLOW_UNAUTHENTICATED: "true"
+      ACCOUNT_REGISTRATION: "false"
+      HIDE_HISTORY: "true"
+
+networks:
+  proxy:
+    external: true
+    name: proxy

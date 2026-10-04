@@ -1,0 +1,40 @@
+name: booklogr
+
+services:
+  booklogr-api:
+    image: mozzo/booklogr:v1.11.1
+    container_name: booklogr-api
+    restart: unless-stopped
+    # Internal only — the web tier reaches this over the proxy network.
+    expose:
+      - "5000"
+    env_file:
+      - .env
+    volumes:
+      - /opt/booklogr/app:/app/instance
+    networks:
+      - proxy
+
+  booklogr-web:
+    image: mozzo/booklogr-web:v1.11.1
+    container_name: booklogr-web
+    restart: unless-stopped
+    # Reachable only through Caddy at booklogr.localhost
+    expose:
+      - "80"
+    env_file:
+      - .env
+    environment:
+      # Resolved over the proxy network rather than published on the host.
+      BL_API_ENDPOINT: http://booklogr-api:5000
+      BL_GOOGLE_ID: ${BL_GOOGLE_ID:-}
+      BL_DEMO_MODE: "false"
+    depends_on:
+      - booklogr-api
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy

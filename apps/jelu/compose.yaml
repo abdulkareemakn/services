@@ -1,0 +1,23 @@
+name: jelu
+
+services:
+  jelu:
+    image: wabayang/jelu:latest
+    container_name: jelu
+    restart: unless-stopped
+    # Reachable only through Caddy at jelu.localhost
+    expose:
+      - "11111"
+    volumes:
+      - /opt/jelu/config:/config
+      - /opt/jelu/db:/database
+      - /opt/jelu/files/images:/files/images
+      - /opt/jelu/files/imports:/files/imports
+      - /etc/localtime:/etc/timezone:ro
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy
