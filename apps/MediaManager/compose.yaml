@@ -1,0 +1,41 @@
+name: MediaManager
+services:
+  mediamanager:
+    image: ghcr.io/maxdorninger/mediamanager/mediamanager:latest
+    environment:
+    - CONFIG_DIR=/app/config
+    volumes:
+    - /home/abdulkareem/media/:/data/
+    - /opt/mediamanager/config:/app/config/
+    - /opt/mediamanager/images:/data/images/
+    container_name: mediamanager-app
+    restart: unless-stopped
+    expose:
+    - '8000'
+    networks:
+    - proxy
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    volumes:
+    - /opt/mediamanager/db:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: MediaManager
+      POSTGRES_DB: MediaManager
+      POSTGRES_PASSWORD: MediaManager
+    container_name: mediamanager-db
+    networks:
+    - proxy
+    expose:
+    - '5432'
+networks:
+  proxy:
+    external: true
+    name: proxy

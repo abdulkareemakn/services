@@ -1,0 +1,24 @@
+name: glasskeep
+services:
+  app:
+    image: nikunjsingh/glass-keep:latest
+    container_name: glass-keep
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: '8080'
+      JWT_SECRET: ${JWT_SECRET}
+      DB_FILE: /app/data/notes.db
+      ADMIN_EMAILS: me@abdulkareem.codes
+    volumes:
+    - /opt/glasskeep/app:/app/data
+    expose:
+    - '8080'
+    networks:
+    - proxy
+    env_file:
+    - .env
+networks:
+  proxy:
+    external: true
+    name: proxy

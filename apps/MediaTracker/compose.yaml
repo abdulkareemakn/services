@@ -1,0 +1,22 @@
+name: MediaTracker
+services:
+  mediatracker:
+    image: bonukai/mediatracker:latest
+    container_name: mediatracker
+    volumes:
+    - /opt/mediatracker/app:/storage
+    - /opt/mediatracker/assets:/assets
+    environment:
+      SERVER_LANG: en
+      TMDB_LANG: en
+      AUDIBLE_LANG: us
+      TZ: Asia/Karachi
+    restart: unless-stopped
+    expose:
+    - '7481'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

@@ -1,0 +1,23 @@
+name: slink
+services:
+  slink:
+    container_name: slink
+    image: anirdev/slink:latest
+    restart: unless-stopped
+    environment:
+    - ORIGIN=http://localhost:3333
+    - TZ=UTC
+    - USER_APPROVAL_REQUIRED=false
+    - IMAGE_MAX_SIZE=15M
+    - STORAGE_PROVIDER=local
+    volumes:
+    - /opt/slink/var:/app/var/data
+    - /opt/slink/images:/app/slink/images
+    expose:
+    - '3000'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

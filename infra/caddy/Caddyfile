@@ -4,8 +4,9 @@
 # Backends resolve by container_name over the shared `proxy` network, so no
 # application publishes a host port and port conflicts cannot happen.
 #
-# TLS uses Caddy's internal CA. Trust it once per device with `make trust`,
-# then every *.localhost URL below is a valid browser URL.
+# Adding a service = adding a block here. Nothing else needs to change.
+#
+# TLS uses Caddy's internal CA. Trust it once per device with `make trust`.
 {
 	admin localhost:2019
 	local_certs
@@ -46,6 +47,14 @@ actual.localhost {
 	import common actualbudget:5006
 }
 
+arcane.localhost {
+	import common arcane:3552
+}
+
+blinko.localhost {
+	import common blinko-website:1111
+}
+
 booklogr.localhost {
 	import common booklogr-web:80
 }
@@ -54,8 +63,71 @@ booklogr-api.localhost {
 	import common booklogr-api:5000
 }
 
+bookmarks.localhost {
+	import common linkding:9090
+}
+
+budgetzen.localhost {
+	import common budgetzen-website:8000
+}
+
+bytebin.localhost {
+	import common bytebin:8080
+}
+
+bytestash.localhost {
+	import common bytestash:5000
+}
+
 convert.localhost {
 	import common convertx:3000
+}
+
+dav.localhost {
+	import common radicale:5232
+}
+
+dockpeek.localhost {
+	import common dockpeek:8000
+}
+
+dumbbudget.localhost {
+	import common dumbbudget:3000
+}
+
+dumbpad.localhost {
+	import common dumbpad:3000
+}
+
+expenseowl.localhost {
+	import common expenseowl:8080
+}
+
+flatnotes.localhost {
+	import common flatnotes:8080
+}
+
+forgejo.localhost {
+	import common forgejo:3000
+}
+
+freshrss.localhost {
+	import common freshrss:80
+}
+
+glasskeep.localhost {
+	import common glass-keep:8080
+}
+
+hammond.localhost {
+	import common hammond:3000
+}
+
+homeassistant.localhost {
+	# Home Assistant runs privileged with network_mode: host, so it is not on
+	# the proxy network and cannot be reached by container name. Caddy reaches
+	# it through the docker bridge gateway instead.
+	import common host.docker.internal:8123
 }
 
 ittools.localhost {
@@ -70,12 +142,32 @@ kaneo.localhost {
 	import common kaneo-app:5173
 }
 
-bookmarks.localhost {
-	import common linkding:9090
+karakeep.localhost {
+	import common karakeep-web:3000
+}
+
+linkwarden.localhost {
+	import common linkwarden-app:3000
+}
+
+many-notes.localhost {
+	import common many-notes:8080
 }
 
 memos.localhost {
 	import common memos:5230
+}
+
+mediamanager.localhost {
+	import common mediamanager-app:8000
+}
+
+mediatracker.localhost {
+	import common mediatracker:7481
+}
+
+movary.localhost {
+	import common movary:8080
 }
 
 navidrome.localhost {
@@ -86,8 +178,48 @@ opengist.localhost {
 	import common opengist:6157
 }
 
-dav.localhost {
-	import common radicale:5232
+openwebui.localhost {
+	import common open-webui:8080
+}
+
+padloc.localhost {
+	import common padloc-pwa:8080
+}
+
+passbolt.localhost {
+	import common passbolt-app:80
+}
+
+picsur.localhost {
+	import common picsur:8080
+}
+
+planka.localhost {
+	import common planka-app:1337
+}
+
+portainer.localhost {
+	import common portainer:8000
+}
+
+portracker.localhost {
+	import common portracker:4999
+}
+
+silverbullet.localhost {
+	import common silverbullet:3000
+}
+
+slash.localhost {
+	import common slash:5231
+}
+
+slink.localhost {
+	import common slink:3000
+}
+
+sonarr.localhost {
+	import common sonarr:8989
 }
 
 sure.localhost {
@@ -98,12 +230,32 @@ tasktrove.localhost {
 	import common tasktrove:3000
 }
 
+termix.localhost {
+	import common termix:8050
+}
+
+timetracker.localhost {
+	import common timetracker:8080
+}
+
 tracktor.localhost {
 	import common tracktor:3000
 }
 
+vikunja.localhost {
+	import common vikunja:3456
+}
+
 vince.localhost {
 	import common vince:8080
+}
+
+wallos.localhost {
+	import common wallos:80
+}
+
+wally.localhost {
+	import common wally:80
 }
 
 yamtrack.localhost {
@@ -129,7 +281,6 @@ litestream.localhost {
 }
 
 # ─── Catch-all ───────────────────────────────────────────────────────────────
-# Unknown *.localhost names get a useful answer instead of a TLS error.
 
 :80 {
 	redir https://{host}{uri} permanent

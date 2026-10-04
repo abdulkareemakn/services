@@ -1,0 +1,16 @@
+name: expenseowl
+services:
+  expenseowl:
+    image: tanq16/expenseowl:main
+    restart: unless-stopped
+    volumes:
+    - /opt/expenseowl/app:/app/data
+    container_name: expenseowl
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

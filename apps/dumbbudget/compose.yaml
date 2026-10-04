@@ -1,0 +1,21 @@
+name: dumbbudget
+services:
+  DumbBudget:
+    image: abdulkareem/dumbbudget:latest
+    container_name: dumbbudget
+    volumes:
+    - /opt/dumbbudget/app:/app/data
+    restart: unless-stopped
+    environment:
+    - DUMBBUDGET_PIN=12345
+    - CURRENCY=PKR
+    - BASE_URL=http://localhost:1236
+    - INSTANCE_NAME="Galleons"
+    expose:
+    - '3000'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

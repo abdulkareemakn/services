@@ -1,33 +1,65 @@
 # Floating image tags
 
-Every other service pins an exact version. These eight do not, with reasons.
+38 of 78 image references in this repo float (`:latest`, `:stable` or
+`:main`). They are listed here so the risk is explicit rather than accidental.
 
-The risk of a floating tag: an unattended restart can pull a breaking change
-with no commit to point at. Where a pin is possible, use one — upgrade
-deliberately with `make pull` followed by `make up SERVICE=<name>`.
+## Why it matters
 
-| Service | Tag | Why it floats |
+An unattended restart can pull a breaking change with no commit to point at.
+`apps/memos` is the worked example: it was pinned to `0.25.2` while its
+database had been created by `0.30.0`. Memos migrations only run forward, so the
+older binary refused to start with `no such table: migration_history` and
+treated a populated database as empty. Wrong pins are worse than no pin.
+
+## Services that migrate a database on start
+
+These are the ones where a floating tag can do real damage. If one starts
+failing after an automatic pull, read the logs and restore from litestream
+before retrying.
+
+| Service | Tag | Store |
 |---|---|---|
-| `apps/sure` | `ghcr.io/we-promise/sure:stable` | Upstream ships `stable` as the supported channel and tags releases separately. Pinning has caused upgrade-path friction upstream. |
-| `apps/navidrome` | `deluan/navidrome:stable` | Navidrome publishes `stable` as a floating tested channel; version tags are not consistently published to GHCR. |
-| `apps/it-tools` | `ghcr.io/corentinth/it-tools:stable` | Static frontend, no persistent state, no migrations. A bad build is cosmetic and self-corrects on the next pull. |
-| `apps/tasktrove` | `ghcr.io/dohsimpson/tasktrove:latest` | No release tags published. Has migrations, so check `make logs` after an update. |
-| `apps/yamtrack` | `ghcr.io/fuzzygrim/yamtrack:latest` | No release tags published. SQLite-backed; restore from litestream if a build breaks the schema. |
-| `apps/tracktor` | `ghcr.io/javedh-dev/tracktor:latest` | No release tags published. Stateless. |
-| `apps/jelu` | `wabayang/jelu:latest` | No release tags published. SQLite-backed via `/opt/jelu/db`. |
-| `apps/vince` | `ghcr.io/vinceanalytics/vince:latest` | No release tags published. Stateless apart from its data volume. |
+| `apps/memos` | pinned `0.30.0` | sqlite at `/opt/memos/app` |
+| `apps/vikunja` | `vikunja/vikunja:latest` | sqlite at `/opt/vikunja/db` |
+| `apps/linkwarden` | `ghcr.io/linkwarden/linkwarden:latest` | postgres + meilisearch |
+| `apps/blinko` | `blinkospace/blinko:latest` | postgres |
+| `apps/planka` | postgres + app, both floating | postgres at `/opt/planka/db` |
+| `apps/glasskeep` | `nikunjsingh/glass-keep:latest` | sqlite at `/opt/glasskeep/app` |
+| `apps/jelu` | `wabayang/jelu:latest` | sqlite at `/opt/jelu/db` |
+| `apps/yamtrack` | `ghcr.io/fuzzygrim/yamtrack:latest` | sqlite at `/opt/yamtrack/db`, replicated by litestream |
+| `apps/tasktrove` | `ghcr.io/dohsimpson/tasktrove:latest` | `/opt/tasktrove/app` |
 
-## Services with migrations
+## Pinned but intentionally floating
 
-`tasktrove`, `yamtrack` and `jelu` all persist state and run schema migrations on
-start. If one starts failing after an automatic pull, check the logs first and
-restore from litestream if the schema moved.
+| Service | Tag | Reason |
+|---|---|---|
+| `apps/sure` | `ghcr.io/we-promise/sure:stable` | upstream ships `stable` as the supported channel |
+| `apps/navidrome` | `deluan/navidrome:stable` | upstream's tested channel; version tags not reliably on GHCR |
+| `apps/it-tools` | `ghcr.io/corentinth/it-tools:stable` | static frontend, no state, no migrations |
+| `apps/HomeAssistant` | `ghcr.io/home-assistant/home-assistant:stable` | HA publishes `stable` deliberately; minor versions are the support unit |
 
-## Pinning one of these
+## Stateless — low risk
+
+`arcane`, `bytestash`, `budgetzen`, `dockpeek`, `dumbbudget`, `dumbpad`,
+`expenseowl`, `flatnotes`, `freshrss`, `hammond`, `many-notes`, `MediaManager`,
+`MediaTracker`, `movary`, `openwebui`, `picsur`, `portainer`, `portracker`,
+`silverbullet`, `slash`, `slink`, `sonarr`, `termix`, `timetracker`,
+`tracktor`, `vince`, `wallos`.
+
+These hold no database and no durable state, so a bad pull costs a restart.
+
+## Pinning one
+
+Find the current version rather than guessing:
 
 ```bash
-docker run --rm <image>:latest <entrypoint> version   # or check the release page
+docker run --rm <image>:latest <entrypoint> version
+# or check the upstream releases page
 ```
 
-Then edit the compose file and record the version in a comment, the way
-`apps/memos` documents why it cannot be downgraded.
+Then edit the compose file and **record why in a comment**, the way
+`apps/memos` does. A future reader needs to know the pin is load-bearing.
+
+Do not pin `postgres`, `redis` or `caddy` to `latest` — those are already
+pinned, and an unpinned database image can silently change major version under
+an existing data directory.

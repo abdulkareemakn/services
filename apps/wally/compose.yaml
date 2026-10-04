@@ -1,0 +1,16 @@
+name: wally
+services:
+  wally:
+    image: poliuscorp/wally
+    container_name: wally
+    restart: unless-stopped
+    volumes:
+    - /opt/wally/app:/wally/data
+    expose:
+    - '80'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

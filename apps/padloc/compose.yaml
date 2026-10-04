@@ -1,0 +1,41 @@
+name: padloc
+services:
+  server:
+    image: padloc/server
+    build:
+      context: github.com/padloc/padloc.git#main
+      dockerfile: Dockerfile-server
+    environment:
+      PL_DATA_BACKEND: leveldb
+      PL_DATA_LEVELDB_DIR: /data
+      PL_DATA_ATTACHMENTS_BACKEND: fs
+      PL_DATA_ATTACHMENTS_DIR: /attachments
+      PL_SERVER_CLIENT_URL: http://localhost:7070
+      PL_EMAIL_BACKEND: console
+    volumes:
+    - /opt/padloc/attachments:/attachments
+    - /opt/padloc/app:/data
+    restart: unless-stopped
+    container_name: padloc-server
+    expose:
+    - '3000'
+    networks:
+    - proxy
+  pwa:
+    image: padloc/pwa
+    build:
+      context: github.com/padloc/padloc.git#main
+      dockerfile: Dockerfile-pwa
+    environment:
+      PL_SERVER_URL: http://localhost:3000
+      PL_PWA_URL: http://localhost:7070
+    restart: unless-stopped
+    container_name: padloc-pwa
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

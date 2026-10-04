@@ -1,0 +1,20 @@
+name: dumbpad
+services:
+  dumbpad:
+    image: dumbwareio/dumbpad:latest
+    container_name: dumbpad
+    restart: unless-stopped
+    volumes:
+    - /opt/dumbpad/app:/app/data
+    environment:
+      SITE_TITLE: DumbPad
+      DUMBPAD_PIN: null
+      BASE_URL: http://localhost:2000
+    expose:
+    - '3000'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

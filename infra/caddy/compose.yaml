@@ -21,6 +21,10 @@ services:
       - /opt/caddy/data:/data
     networks:
       - proxy
+    extra_hosts:
+      # Home Assistant runs with network_mode: host, so it is not on the proxy
+      # network. This is how Caddy reaches any host-networked service.
+      - "host.docker.internal:host-gateway"
     healthcheck:
       # The admin API is always local and is the cheapest proof that Caddy
       # has parsed its config and is serving.

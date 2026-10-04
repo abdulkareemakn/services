@@ -1,0 +1,17 @@
+name: openwebui
+services:
+  open-webui:
+    volumes:
+    - /opt/openwebui/app:/root/.ollama
+    - /opt/openwebui/app:/app/backend/data
+    container_name: open-webui
+    restart: unless-stopped
+    image: ghcr.io/open-webui/open-webui:ollama
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

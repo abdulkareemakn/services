@@ -1,0 +1,20 @@
+name: freshrss
+services:
+  freshrss:
+    image: lscr.io/linuxserver/freshrss:latest
+    container_name: freshrss
+    environment:
+    - PUID=1000
+    - PGID=1000
+    - TZ=Etc/UTC
+    volumes:
+    - /opt/freshrss/config:/config
+    restart: unless-stopped
+    expose:
+    - '80'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

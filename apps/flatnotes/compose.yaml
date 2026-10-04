@@ -1,0 +1,24 @@
+name: flatnotes
+services:
+  flatnotes:
+    container_name: flatnotes
+    image: dullage/flatnotes:latest
+    environment:
+      PUID: 1000
+      PGID: 1000
+      FLATNOTES_AUTH_TYPE: password
+      FLATNOTES_USERNAME: user
+      FLATNOTES_PASSWORD: '12345678'
+      FLATNOTES_SECRET_KEY: 45ef8b2e09b87a95242fa6fa5dda5a86c4af6bbf3e579e07
+    volumes:
+    - /opt/flatnotes/app:/data
+    - /opt/flatnotes/index:/data/.flatnotes
+    restart: unless-stopped
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

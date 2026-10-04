@@ -1,0 +1,45 @@
+name: passbolt
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 'true'
+      MYSQL_DATABASE: passbolt
+      MYSQL_USER: passbolt
+      MYSQL_PASSWORD: P4ssb0lt
+    volumes:
+    - /opt/passbolt/db:/var/lib/mysql
+    container_name: passbolt-db
+    networks:
+    - proxy
+  passbolt:
+    image: passbolt/passbolt:latest-ce
+    restart: unless-stopped
+    depends_on:
+    - db
+    environment:
+      APP_FULL_BASE_URL: https://passbolt.local
+      DATASOURCES_DEFAULT_HOST: db
+      DATASOURCES_DEFAULT_USERNAME: passbolt
+      DATASOURCES_DEFAULT_PASSWORD: P4ssb0lt
+      DATASOURCES_DEFAULT_DATABASE: passbolt
+    volumes:
+    - /opt/passbolt/gpg:/etc/passbolt/gpg
+    - /opt/passbolt/jwt:/etc/passbolt/jwt
+    command:
+    - /usr/bin/wait-for.sh
+    - -t
+    - '0'
+    - db:3306
+    - --
+    - /docker-entrypoint.sh
+    container_name: passbolt-app
+    expose:
+    - '80'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

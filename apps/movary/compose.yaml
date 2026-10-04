@@ -1,0 +1,18 @@
+name: movary
+services:
+  movary:
+    image: leepeuker/movary:latest
+    container_name: movary
+    environment:
+    - DATABASE_MODE="sqlite"
+    volumes:
+    - /opt/movary/storage:/app/storage
+    restart: unless-stopped
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

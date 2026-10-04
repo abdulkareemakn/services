@@ -1,0 +1,45 @@
+name: linkwarden
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+    - /opt/linkwarden/db:/var/lib/postgresql/data
+    container_name: linkwarden-postgres
+    networks:
+    - proxy
+    expose:
+    - '5432'
+  linkwarden:
+    env_file: .env
+    environment:
+    - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres
+    restart: unless-stopped
+    image: ghcr.io/linkwarden/linkwarden:latest
+    volumes:
+    - /opt/linkwarden/app:/data/data
+    depends_on:
+    - postgres
+    - meilisearch
+    container_name: linkwarden-app
+    expose:
+    - '3000'
+    networks:
+    - proxy
+  meilisearch:
+    image: getmeili/meilisearch:v1.12.8
+    restart: unless-stopped
+    env_file:
+    - .env
+    volumes:
+    - /opt/linkwarden/meili_data:/meili_data
+    container_name: linkwarden-meilisearch
+    networks:
+    - proxy
+    expose:
+    - '7700'
+networks:
+  proxy:
+    external: true
+    name: proxy

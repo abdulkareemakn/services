@@ -1,0 +1,19 @@
+name: wallos
+services:
+  wallos:
+    container_name: wallos
+    image: bellamy/wallos:latest
+    environment:
+      TZ: Asia/Karachi
+    volumes:
+    - /opt/wallos/db:/var/www/html/db
+    - /opt/wallos/logos:/var/www/html/images/uploads/logos
+    restart: unless-stopped
+    expose:
+    - '80'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

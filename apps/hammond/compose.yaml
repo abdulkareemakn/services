@@ -1,0 +1,19 @@
+name: hammond
+services:
+  hammond:
+    image: alfhou/hammond
+    container_name: hammond
+    environment:
+    - JWT_SECRET=${JWT_SECRET}
+    volumes:
+    - /opt/hammond/config:/config
+    - /opt/hammond/app:/assets
+    restart: unless-stopped
+    expose:
+    - '3000'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

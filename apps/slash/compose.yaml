@@ -1,0 +1,16 @@
+name: slash
+services:
+  slash:
+    image: yourselfhosted/slash:latest
+    container_name: slash
+    volumes:
+    - /opt/containers/slash:/var/opt/slash
+    restart: unless-stopped
+    expose:
+    - '5231'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

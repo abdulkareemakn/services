@@ -1,0 +1,21 @@
+name: many-notes
+services:
+  php:
+    image: brufdev/many-notes:latest
+    container_name: many-notes
+    restart: unless-stopped
+    environment:
+    - APP_URL=http://localhost
+    volumes:
+    - /opt/many-notes/db:/var/www/html/database/sqlite
+    - /opt/many-notes/logs:/var/www/html/storage/logs
+    - /opt/many-notes/private:/var/www/html/storage/app/private
+    - /opt/many-notes/typesense:/var/www/html/typesense
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

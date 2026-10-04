@@ -1,0 +1,14 @@
+name: timetracker
+services:
+  timetracker:
+    image: ghcr.io/DRYTRIX/TimeTracker:latest
+    container_name: timetracker
+    restart: unless-stopped
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

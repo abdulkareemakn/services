@@ -1,0 +1,20 @@
+name: bytebin
+services:
+  bytebin:
+    image: ghcr.io/lucko/bytebin
+    volumes:
+    - /opt/bytebin/app:/opt/bytebin/content
+    - /opt/bytebin/db:/opt/bytebin/db
+    environment:
+      BYTEBIN_MISC_KEYLENGTH: 15
+      BYTEBIN_CONTENT_MAXSIZE: 5
+    container_name: bytebin
+    restart: unless-stopped
+    expose:
+    - '8080'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy

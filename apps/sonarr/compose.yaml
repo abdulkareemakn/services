@@ -1,0 +1,22 @@
+name: sonarr
+services:
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+    - PUID=1000
+    - PGID=1000
+    - TZ=Asia/Karachi
+    volumes:
+    - /opt/sonarr/config:/sonarr/config
+    - /home/abdulkareem/media/TVShows/:/sonarr/data/TVShows/
+    - /home/abdulkareem/media/Movies/:/sonarr/data/Movies
+    restart: unless-stopped
+    expose:
+    - '8989'
+    networks:
+    - proxy
+networks:
+  proxy:
+    external: true
+    name: proxy
