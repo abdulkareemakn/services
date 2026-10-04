@@ -2,7 +2,11 @@ name: memos
 
 services:
   memos:
-    image: neosmemo/memos:0.25.2
+    # Pinned to match the version this database was created by. Memos
+    # migrations only run forward, so downgrading the tag corrupts startup:
+    # an older binary reports "no such table: migration_history" and treats an
+    # existing database as empty. `:stable` currently resolves to 0.30.0.
+    image: neosmemo/memos:0.30.0
     container_name: memos
     restart: unless-stopped
     # Reachable only through Caddy at memos.localhost
