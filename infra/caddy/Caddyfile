@@ -286,6 +286,13 @@ litestream.localhost {
 	redir https://{host}{uri} permanent
 }
 
-*.localhost:443 {
-	respond "No route for {host}. Add a block to infra/caddy/Caddyfile." 404
-}
+# No wildcard block for :443 on purpose.
+#
+# A *.localhost block makes Caddy issue a single wildcard certificate with SAN
+# DNS:*.localhost, and it serves that certificate for every matching host —
+# including the ones with their own blocks above. Browsers then reject the
+# hostname as not matching the certificate.
+#
+# An unknown *.localhost host now gets Caddy's default internal-CA response
+# instead, which is a TLS error rather than a useful 404. Check the hostname
+# spelling against the blocks above.
