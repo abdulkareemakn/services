@@ -1,7 +1,8 @@
 # Conventions
 
-Every service in this repository follows the same rules. The point is that you
-can read any `compose.yaml` and know what to expect without reading all of them.
+Every service in this repository follows the same rules, apart from a short list
+of deliberate exceptions at the end. The point is that you can read any
+`compose.yaml` and know what to expect without reading all of them.
 
 ## Layout
 
@@ -80,7 +81,7 @@ config value where one exists; use an alias where the app hardcodes the name.
 
 ## Networking
 
-There is exactly one published surface in this repo: Caddy on 80/443.
+There is exactly one `ports:` block in this repo, and it belongs to Caddy.
 
 Every other service uses `expose:`, never `ports:`. Caddy routes on hostname
 and resolves backends by `container_name` over the shared `proxy` network.
@@ -219,6 +220,24 @@ entry is a one-off for the rare platform that needs it.
 Apps that build absolute URLs — OAuth callbacks, CSRF origin checks, DAV
 discovery — must be told their real hostname. Look for `*_URL`, `*_ENDPOINT`
 and `CSRF_TRUSTED_ORIGINS` in the `.env.example` files.
+
+## Deliberate exceptions
+
+Two containers break the rules above on purpose, each with a comment in its
+compose file saying why. Do not normalise them without reading that comment
+first.
+
+| Container | Breaks | Why |
+|---|---|---|
+| `homeassistant` | `network_mode: host`, `privileged: true` | mDNS/SSDP discovery does not survive a bridge. Caddy reaches it via `host.docker.internal:8123`. |
+| `beszel-agent` | `network_mode: host` | Reports host-level metrics and cannot sit on the proxy bridge. It listens on a unix socket, so it still needs no published port. |
+
+Host networking is why the "one `ports:` block" rule still holds: both of these
+bind on the host without one.
+
+[docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) is the running list of known
+deviations — services that will not start as-is, plus the exceptions above.
+Check it before concluding that a service is misconfigured.
 
 ## Adding a service
 

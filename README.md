@@ -52,7 +52,7 @@ infra/litestream/  continuous SQLite replication to R2
 apps/<service>/    one directory per service: compose.yaml + .env.example
 ```
 
-See [CONVENTIONS.md](CONVENTIONS.md) for the rules every service follows.
+See [AGENTS.md](AGENTS.md) for the rules every service follows.
 
 ## Everyday commands
 
@@ -91,7 +91,7 @@ Third-party credentials (API keys, object storage) go in `.env` by hand.
 3. `make validate`.
 4. Commit, then `make up SERVICE=<service>`.
 
-Full checklist in [CONVENTIONS.md](CONVENTIONS.md#adding-a-service).
+Full checklist in [AGENTS.md](AGENTS.md#adding-a-service).
 
 ## Maintenance
 
