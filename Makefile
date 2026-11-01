@@ -10,8 +10,9 @@ SHELL := /bin/bash
 NETWORK := proxy
 COMPOSE_FILES := $(shell find apps infra -name compose.yaml 2>/dev/null | sort)
 
-# Services that must be running before anything else is useful.
-PREREQS := caddy
+# Empty when SERVICE names no compose project. $(dir ...) cannot be used here:
+# it strips the last component, turning apps/memos into apps/.
+SERVICE_DIR := $(or $(wildcard apps/$(SERVICE)),$(wildcard infra/$(SERVICE)))
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -38,22 +39,27 @@ network: ## Create the shared proxy network if it does not exist
 		|| docker network create $(NETWORK)
 	@echo "network $(NETWORK) ready"
 
+.PHONY: require-service
+require-service: # fails when SERVICE names nothing under apps/ or infra/
+	@test -z "$(SERVICE)" || test -n "$(SERVICE_DIR)" \
+		|| { echo "  no such service: '$(SERVICE)'" >&2; exit 1; }
+
 .PHONY: up
-up: network ## Start all services (or SERVICE=name)
+up: network require-service ## Start all services (or SERVICE=name)
 	@$(if $(SERVICE), \
-		cd $(dir $(firstword $(wildcard apps/$(SERVICE) infra/$(SERVICE)))) && docker compose up -d, \
+		cd $(SERVICE_DIR) && docker compose up -d, \
 		for f in $(COMPOSE_FILES); do echo "  starting $$f"; docker compose -f $$f up -d || echo "  FAILED: $$f"; done)
 
 .PHONY: down
-down: ## Stop all services (or SERVICE=name)
+down: require-service ## Stop all services (or SERVICE=name)
 	@$(if $(SERVICE), \
-		cd $(dir $(firstword $(wildcard apps/$(SERVICE) infra/$(SERVICE)))) && docker compose down, \
+		cd $(SERVICE_DIR) && docker compose down, \
 		for f in $(COMPOSE_FILES); do docker compose -f $$f down || true; done)
 
 .PHONY: restart
-restart: ## Restart all services (or SERVICE=name)
+restart: require-service ## Restart all services (or SERVICE=name)
 	@$(if $(SERVICE), \
-		cd $(dir $(firstword $(wildcard apps/$(SERVICE) infra/$(SERVICE)))) && docker compose restart, \
+		cd $(SERVICE_DIR) && docker compose restart, \
 		for f in $(COMPOSE_FILES); do docker compose -f $$f restart || true; done)
 
 .PHONY: pull
@@ -81,9 +87,9 @@ health: ## Show only containers that are unhealthy or restarting
 	@echo "  (no output above means everything is healthy)"
 
 .PHONY: logs
-logs: ## Follow logs (or SERVICE=name)
+logs: require-service ## Follow logs (or SERVICE=name)
 	@$(if $(SERVICE), \
-		cd $(dir $(firstword $(wildcard apps/$(SERVICE) infra/$(SERVICE)))) && docker compose logs -f --tail=100, \
+		cd $(SERVICE_DIR) && docker compose logs -f --tail=100, \
 		for f in $(COMPOSE_FILES); do echo "=== $$f"; docker compose -f $$f logs --tail=20; done)
 
 # ─── Ingress ─────────────────────────────────────────────────────────────────
