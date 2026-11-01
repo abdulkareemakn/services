@@ -14,8 +14,6 @@ CONTAINER_PATH="/data/caddy/pki/authorities/local/root.crt"
 die() { printf '  \033[31merror\033[0m %s\n' "$1" >&2; exit 1; }
 info() { printf '  %s\n' "$1"; }
 
-# ── Locate the certificate ───────────────────────────────────────────────────
-
 # Always re-extract: /opt/caddy/data is disposable, so a regenerated CA would
 # otherwise be masked by a stale ./root.crt left over from the previous one.
 if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
@@ -35,8 +33,6 @@ fi
 
 command -v openssl >/dev/null 2>&1 || die "openssl is required but not installed"
 
-# ── Identify the certificate ─────────────────────────────────────────────────
-
 if ! openssl x509 -in "$LOCAL_CRT" -noout >/dev/null 2>&1; then
 	die "$LOCAL_CRT is not a valid PEM certificate"
 fi
@@ -55,8 +51,6 @@ case "$SUBJECT" in
 	*) die "certificate does not look like Caddy's root CA:
        $SUBJECT" ;;
 esac
-
-# ── Detect the platform ──────────────────────────────────────────────────────
 
 [ "$(uname -s)" = "Darwin" ] && { info "macOS detected"; TRUST_MODE=security; }
 
@@ -114,8 +108,6 @@ info "certificate : $SUBJECT"
 [ "$LABEL" = "macOS Keychain" ] || info "trust store : $LABEL ($ANCHOR_DIR)"
 [ "$LABEL" = "macOS Keychain" ] || info "refresh     : $REFRESH"
 
-# ── Install ──────────────────────────────────────────────────────────────────
-
 if [ "$(id -u)" -ne 0 ]; then
 	die "needs root. Re-run with sudo:
        sudo $0 $*"
@@ -130,8 +122,6 @@ else
 	$REFRESH >/dev/null 2>&1 || die "$REFRESH failed"
 	info "installed to $ANCHOR_DIR/$CERT_NAME.crt"
 fi
-
-# ── Verify ───────────────────────────────────────────────────────────────────
 
 # Verify against the bundle the system resolves, not the anchor's own directory:
 # a store that accepts the file but ignores it still reports success here.

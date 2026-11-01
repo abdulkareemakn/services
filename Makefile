@@ -21,8 +21,6 @@ CADDY_VALIDATE := docker run --rm \
 	-v "$(CURDIR)/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
 	caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
-# ─── Help ────────────────────────────────────────────────────────────────────
-
 .PHONY: help
 help: ## Show this help
 	@echo ""
@@ -37,8 +35,6 @@ help: ## Show this help
 	@echo "    make logs SERVICE=memos follow one service"
 	@echo "    make validate           config-check every compose file"
 	@echo ""
-
-# ─── Lifecycle ───────────────────────────────────────────────────────────────
 
 .PHONY: network
 network: ## Create the shared proxy network if it does not exist
@@ -73,8 +69,6 @@ restart: require-service ## Restart all services (or SERVICE=name)
 pull: ## Pull newer images for all services
 	@for f in $(COMPOSE_FILES); do docker compose -f $$f pull || true; done
 
-# ─── Inspection ──────────────────────────────────────────────────────────────
-
 .PHONY: ps
 ps: ## Show status of every service
 	@printf "  %-34s %-10s %-9s %s\n" SERVICE PROJECT STATUS PORTS
@@ -98,8 +92,6 @@ logs: require-service ## Follow logs (or SERVICE=name)
 	@$(if $(SERVICE), \
 		cd $(SERVICE_DIR) && docker compose logs -f --tail=100, \
 		for f in $(COMPOSE_FILES); do echo "=== $$f"; docker compose -f $$f logs --tail=20; done)
-
-# ─── Ingress ─────────────────────────────────────────────────────────────────
 
 # The script is authoritative; this asserts its result because the failure mode
 # is a silent no-op rather than an error.
@@ -131,8 +123,6 @@ reload-caddy: ## Reload the Caddy config and report any errors
 validate-caddy: ## Check the Caddyfile without applying it
 	@$(CADDY_VALIDATE)
 
-# ─── Quality ─────────────────────────────────────────────────────────────────
-
 .PHONY: validate
 validate: ## Config-check every compose file and the Caddyfile
 	@fail=0; err=$$(mktemp); \
@@ -152,8 +142,6 @@ validate: ## Config-check every compose file and the Caddyfile
 	echo ""; \
 	if [ $$fail -eq 0 ]; then echo "  all compose files valid"; else echo "  errors above"; fi; \
 	exit $$fail
-
-# ─── Housekeeping ────────────────────────────────────────────────────────────
 
 .PHONY: prune
 prune: ## Remove dangling images and build cache
