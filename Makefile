@@ -14,6 +14,13 @@ COMPOSE_FILES := $(shell find apps infra -name compose.yaml 2>/dev/null | sort)
 # it strips the last component, turning apps/memos into apps/.
 SERVICE_DIR := $(or $(wildcard apps/$(SERVICE)),$(wildcard infra/$(SERVICE)))
 
+# Kept in a variable so validate need not recurse through make: $(MAKE)
+# expands to whatever launched make, which is not always a make binary, and
+# then the recursion fails on make's own flags.
+CADDY_VALIDATE := docker run --rm \
+	-v "$(CURDIR)/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+	caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
 # ─── Help ────────────────────────────────────────────────────────────────────
 
 .PHONY: help
@@ -106,22 +113,26 @@ reload-caddy: ## Reload the Caddy config and report any errors
 
 .PHONY: validate-caddy
 validate-caddy: ## Check the Caddyfile without applying it
-	@docker run --rm -v "$(CURDIR)/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
-		caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+	@$(CADDY_VALIDATE)
 
 # ─── Quality ─────────────────────────────────────────────────────────────────
 
 .PHONY: validate
 validate: ## Config-check every compose file and the Caddyfile
-	@fail=0; \
+	@fail=0; err=$$(mktemp); \
 	for f in $(COMPOSE_FILES); do \
-		if docker compose -f $$f config --quiet 2>/tmp/err; then \
+		if docker compose -f $$f config --quiet 2>$$err; then \
 			printf "  \033[32mok\033[0m    %s\n" "$$f"; \
 		else \
-			printf "  \033[31mFAIL\033[0m  %s\n" "$$f"; sed 's/^/          /' /tmp/err; fail=1; \
+			printf "  \033[31mFAIL\033[0m  %s\n" "$$f"; sed 's/^/          /' $$err; fail=1; \
 		fi; \
 	done; \
-	$(MAKE) --no-print-directory validate-caddy; \
+	rm -f $$err; \
+	if $(CADDY_VALIDATE) >/dev/null 2>&1; then \
+		printf "  \033[32mok\033[0m    %s\n" "infra/caddy/Caddyfile"; \
+	else \
+		printf "  \033[31mFAIL\033[0m  %s\n" "infra/caddy/Caddyfile"; fail=1; \
+	fi; \
 	echo ""; \
 	if [ $$fail -eq 0 ]; then echo "  all compose files valid"; else echo "  errors above"; fi; \
 	exit $$fail
