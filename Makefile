@@ -101,9 +101,25 @@ logs: require-service ## Follow logs (or SERVICE=name)
 
 # ─── Ingress ─────────────────────────────────────────────────────────────────
 
+# The script is authoritative; this asserts its result because the failure mode
+# is a silent no-op rather than an error.
 .PHONY: trust
 trust: ## Trust the Caddy internal CA (required once per device, needs sudo)
 	@./scripts/trust-ca.sh
+	@if [ "$$(uname -s)" = "Darwin" ]; then exit 0; fi; \
+	if ! docker ps --format '{{.Names}}' | grep -qx caddy; then \
+		echo "  note: caddy is not running, skipping the bundle check"; exit 0; \
+	fi; \
+	bundle=""; \
+	for b in /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem; do \
+		if [ -f "$$b" ]; then bundle="$$b"; break; fi; \
+	done; \
+	docker exec caddy cat /data/caddy/pki/authorities/local/root.crt \
+		> /tmp/caddy-root-ca.pem 2>/dev/null; \
+	openssl verify -CAfile "$$bundle" /tmp/caddy-root-ca.pem >/dev/null 2>&1 \
+		|| { echo "  FAIL: $$bundle does not trust Caddy's CA"; \
+		     echo "        services will still warn in the browser"; exit 1; }; \
+	echo "  ok: $$bundle trusts Caddy's CA"
 
 .PHONY: reload-caddy
 reload-caddy: ## Reload the Caddy config and report any errors

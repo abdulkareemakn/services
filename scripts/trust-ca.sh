@@ -16,31 +16,32 @@ info() { printf '  %s\n' "$1"; }
 
 # ── Locate the certificate ───────────────────────────────────────────────────
 
-if [ ! -f "$LOCAL_CRT" ]; then
-	if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-		info "extracting root CA from the running '$CONTAINER' container"
-		docker cp "$CONTAINER:$CONTAINER_PATH" "$LOCAL_CRT" >/dev/null \
-			|| die "could not copy $CONTAINER_PATH out of $CONTAINER"
-	elif docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-		die "'$CONTAINER' exists but is not running. Start it first:
+# Always re-extract: /opt/caddy/data is disposable, so a regenerated CA would
+# otherwise be masked by a stale ./root.crt left over from the previous one.
+if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+	info "extracting root CA from the running '$CONTAINER' container"
+	docker cp "$CONTAINER:$CONTAINER_PATH" "$LOCAL_CRT" >/dev/null \
+		|| die "could not copy $CONTAINER_PATH out of $CONTAINER"
+elif [ -f "$LOCAL_CRT" ]; then
+	info "'$CONTAINER' is not running; using the existing $LOCAL_CRT"
+elif docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+	die "'$CONTAINER' exists but is not running. Start it first:
        make up SERVICE=caddy"
-	else
-		die "no root CA found and no '$CONTAINER' container.
+else
+	die "no root CA found and no '$CONTAINER' container.
        Start the ingress first:
        make up SERVICE=caddy"
-	fi
 fi
 
 command -v openssl >/dev/null 2>&1 || die "openssl is required but not installed"
 
-# ── Identify the certificate, so a stale copy cannot be installed silently ───
+# ── Identify the certificate ─────────────────────────────────────────────────
 
 if ! openssl x509 -in "$LOCAL_CRT" -noout >/dev/null 2>&1; then
 	die "$LOCAL_CRT is not a valid PEM certificate"
 fi
 
-# -subject/-issuer both carry an "subject="/"issuer=" prefix, so strip it
-# before comparing or matching.
+# openssl prints these with a "subject="/"issuer=" prefix; strip it to compare.
 SUBJECT=$(openssl x509 -in "$LOCAL_CRT" -noout -subject 2>/dev/null | sed 's/^subject=//')
 ISSUER=$(openssl x509 -in "$LOCAL_CRT" -noout -issuer 2>/dev/null | sed 's/^issuer=//')
 
@@ -61,8 +62,6 @@ esac
 
 if [ -z "${TRUST_MODE:-}" ]; then
 	if command -v update-ca-trust >/dev/null 2>&1; then
-		# Arch, Fedora, RHEL, CentOS, openSUSE — resolves via PATH so the
-		# check works regardless of where the binary is installed
 		TRUST_MODE=ca-trust
 	elif command -v update-ca-certificates >/dev/null 2>&1; then
 		TRUST_MODE=ca-certificates
@@ -77,12 +76,19 @@ fi
 
 case "$TRUST_MODE" in
 	ca-trust)
-		ANCHOR_DIR=/etc/pki/ca-trust/source/anchors
+		# Arch and Fedora both ship update-ca-trust but read different
+		# directories. On Arch an anchor under /etc/pki is never picked up.
+		if [ -f /etc/arch-release ]; then
+			ANCHOR_DIR=/etc/ca-certificates/trust-source/anchors
+			LABEL="p11-kit (Arch)"
+		else
+			ANCHOR_DIR=/etc/pki/ca-trust/source/anchors
+			LABEL="p11-kit (Fedora, RHEL, openSUSE)"
+		fi
 		REFRESH="update-ca-trust"
-		LABEL="p11-kit (Arch, Fedora, RHEL, openSUSE)"
 		;;
 	ca-certificates)
-		# Distinguish Alpine, which keeps anchors in the system bundle directly.
+		# Alpine keeps its anchors in the bundle directory itself.
 		if [ -f /etc/alpine-release ]; then
 			ANCHOR_DIR=/etc/ssl/certs
 			LABEL="Alpine"
@@ -127,16 +133,28 @@ fi
 
 # ── Verify ───────────────────────────────────────────────────────────────────
 
-if openssl verify -CApath "$(dirname "$ANCHOR_DIR")" "$LOCAL_CRT" >/dev/null 2>&1; then
-	info "verified against the system trust store"
-else
-	info "note: could not self-verify (some distros store anchors in a bundle)."
-	info "test with: curl -sI https://memos.localhost | head -1"
+# Verify against the bundle the system resolves, not the anchor's own directory:
+# a store that accepts the file but ignores it still reports success here.
+if [ "$LABEL" != "macOS Keychain" ]; then
+	BUNDLE=""
+	for b in /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem; do
+		if [ -f "$b" ]; then BUNDLE="$b"; break; fi
+	done
+	[ -n "$BUNDLE" ] || die "no system CA bundle found to verify against"
+
+	if openssl verify -CAfile "$BUNDLE" "$LOCAL_CRT" >/dev/null 2>&1; then
+		info "verified: $BUNDLE now trusts this CA"
+	else
+		die "the anchor is in $ANCHOR_DIR but $BUNDLE still does not trust it.
+       The certificate is NOT trusted - browsers will keep warning.
+       On Arch the bundle is built from /etc/ca-certificates/trust-source/anchors.
+       Try:  sudo trust anchor $LOCAL_CRT && sudo update-ca-trust"
+	fi
 fi
 
 info ""
 info "Check it works:"
-info "  curl -sI https://memos.localhost | head -1"
+info "  curl -sI https://<service>.localhost | head -1"
 info ""
 info "To remove it later:"
 case "$TRUST_MODE" in
